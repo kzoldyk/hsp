@@ -27,6 +27,12 @@ type RequestBuilder struct {
 	LastRequest *LastRequestJSON
 	IsResume    bool
 	IsLast      bool
+	ShowResolved bool
+
+	origURL     string
+	origHeaders map[string]string
+	origParams  map[string]string
+	origBody    string
 }
 
 var (
@@ -37,10 +43,12 @@ var (
 		Run: func(cmd *cobra.Command, args []string) {
 			resume, _ := cmd.Flags().GetBool("resume")
 			last, _ := cmd.Flags().GetBool("last")
+			showResolved, _ := cmd.Flags().GetBool("show-resolved")
 
 			builder := NewRequestBuilder()
 			builder.IsResume = resume
 			builder.IsLast = last
+			builder.ShowResolved = showResolved
 
 			if last {
 				lastReq, err := MustLoadLastRequest()
@@ -194,13 +202,23 @@ func (rb *RequestBuilder) PromptMethod(reader *bufio.Reader) {
 }
 
 func (rb *RequestBuilder) PromptHeaders(reader *bufio.Reader) {
-	fmt.Print("\n? Add headers? (y/n): ")
-	input, _ := reader.ReadString('\n')
-
-	if strings.ToLower(strings.TrimSpace(input)) != "y" {
-		// Auto-set Accept header
-		rb.Headers["Accept"] = "application/json"
-		return
+	if rb.IsResume && len(rb.Headers) > 0 {
+		fmt.Print("\n? Modify headers? (y/n): ")
+		input, _ := reader.ReadString('\n')
+		if strings.ToLower(strings.TrimSpace(input)) != "y" {
+			if _, exists := rb.Headers["Accept"]; !exists {
+				rb.Headers["Accept"] = "application/json"
+			}
+			return
+		}
+		rb.Headers = make(map[string]string)
+	} else {
+		fmt.Print("\n? Add headers? (y/n): ")
+		input, _ := reader.ReadString('\n')
+		if strings.ToLower(strings.TrimSpace(input)) != "y" {
+			rb.Headers["Accept"] = "application/json"
+			return
+		}
 	}
 
 	for {
@@ -225,18 +243,25 @@ func (rb *RequestBuilder) PromptHeaders(reader *bufio.Reader) {
 		color.Green(fmt.Sprintf("  ✓ Added: %s: %s", key, value))
 	}
 
-	// Auto-set Accept if not present
 	if _, exists := rb.Headers["Accept"]; !exists {
 		rb.Headers["Accept"] = "application/json"
 	}
 }
 
 func (rb *RequestBuilder) PromptQueryParams(reader *bufio.Reader) {
-	fmt.Print("\n? Add query parameters? (y/n): ")
-	input, _ := reader.ReadString('\n')
-
-	if strings.ToLower(strings.TrimSpace(input)) != "y" {
-		return
+	if rb.IsResume && len(rb.QueryParams) > 0 {
+		fmt.Print("\n? Modify query parameters? (y/n): ")
+		input, _ := reader.ReadString('\n')
+		if strings.ToLower(strings.TrimSpace(input)) != "y" {
+			return
+		}
+		rb.QueryParams = make(map[string]string)
+	} else {
+		fmt.Print("\n? Add query parameters? (y/n): ")
+		input, _ := reader.ReadString('\n')
+		if strings.ToLower(strings.TrimSpace(input)) != "y" {
+			return
+		}
 	}
 
 	for {
@@ -399,27 +424,32 @@ func (rb *RequestBuilder) PromptPrettyPrint(reader *bufio.Reader) {
 	rb.PrettyOutput = choice != "n"
 }
 
+func (rb *RequestBuilder) resolveVars() {
+	vars, err := GetActiveEnv()
+	if err != nil {
+		return
+	}
+	if rb.ShowResolved {
+		rb.origURL = rb.URL
+		rb.origHeaders = make(map[string]string)
+		for k, v := range rb.Headers {
+			rb.origHeaders[k] = v
+		}
+		rb.origParams = make(map[string]string)
+		for k, v := range rb.QueryParams {
+			rb.origParams[k] = v
+		}
+		rb.origBody = rb.Body
+	}
+	missing := ResolveAll(rb, vars)
+	if len(missing) > 0 {
+		color.Yellow("⚠ Warning: unresolved variables: %v", missing)
+	}
+}
+
 func (rb *RequestBuilder) ShowPreview() {
-	fmt.Println("\n" + rb.RenderRequestPreview())
-
-	// Headers
-	if len(rb.Headers) > 0 {
-		fmt.Println("\nHeaders:")
-		for key, value := range rb.Headers {
-			fmt.Printf("  %s: %s\n", color.GreenString(key), value)
-		}
-	}
-
-	// Body
-	if rb.Body != "" {
-		fmt.Println("\nBody:")
-		lines := strings.Split(rb.Body, "\n")
-		for _, line := range lines {
-			fmt.Printf("  %s\n", line)
-		}
-	}
-
-	fmt.Println(strings.Repeat("=", 70))
+	rb.resolveVars()
+	fmt.Println("\n" + RenderRequest(rb))
 }
 
 func (rb *RequestBuilder) ConfirmSend(reader *bufio.Reader) bool {
@@ -429,6 +459,8 @@ func (rb *RequestBuilder) ConfirmSend(reader *bufio.Reader) bool {
 }
 
 func (rb *RequestBuilder) SendRequest() {
+	rb.resolveVars()
+
 	fullURL := rb.URL
 	if len(rb.QueryParams) > 0 {
 		params := url.Values{}
@@ -561,4 +593,5 @@ func init() {
 	rootCmd.AddCommand(requestCmd)
 	requestCmd.Flags().BoolP("resume", "r", false, "Load last request and start from step 1 (modify before sending)")
 	requestCmd.Flags().BoolP("last", "l", false, "Jump straight to confirmation (re-send last request)")
+	requestCmd.Flags().Bool("show-resolved", false, "Display both {{VAR}} and its resolved value")
 }

@@ -53,7 +53,10 @@ Features:
 Examples:
   hsp request          - Start interactive request builder
   hsp get <url>        - Quick GET request
-  hsp post <url>       - Quick POST request`,
+  hsp post <url>       - Quick POST request
+  hsp put <url>        - Quick PUT request
+  hsp patch <url>      - Quick PATCH request
+  hsp delete <url>     - Quick DELETE request`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -72,4 +75,7 @@ func init() {
 	rootCmd.AddCommand(aliasCmd("r", requestCmd))
 	rootCmd.AddCommand(aliasCmd("g", getCmd))
 	rootCmd.AddCommand(aliasCmd("p", postCmd))
+	rootCmd.AddCommand(aliasCmd("pu", putCmd))
+	rootCmd.AddCommand(aliasCmd("pa", patchCmd))
+	rootCmd.AddCommand(aliasCmd("d", delCmd))
 }

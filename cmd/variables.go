@@ -34,7 +34,9 @@ func ResolveVariables(input string, vars map[string]string) (string, []string) {
 func ResolveAll(req *RequestBuilder, vars map[string]string) []string {
 	allMissing := []string{}
 
-	req.URL, _ = ResolveVariables(req.URL, vars)
+	urlMissing := []string{}
+	req.URL, urlMissing = ResolveVariables(req.URL, vars)
+	allMissing = append(allMissing, urlMissing...)
 
 	newHeaders := make(map[string]string)
 	for key, value := range req.Headers {
@@ -56,7 +58,9 @@ func ResolveAll(req *RequestBuilder, vars map[string]string) []string {
 	}
 	req.QueryParams = newParams
 
-	req.Body, _ = ResolveVariables(req.Body, vars)
+	bodyMissing := []string{}
+	req.Body, bodyMissing = ResolveVariables(req.Body, vars)
+	allMissing = append(allMissing, bodyMissing...)
 
 	seen := make(map[string]bool)
 	uniqueMissing := []string{}

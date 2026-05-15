@@ -199,6 +199,7 @@ var profileRunCmd = &cobra.Command{
 		}
 
 		fmt.Printf("Running profile '%s': %s %s\n", name, builder.Method, builder.URL)
+		builder.resolveVars()
 		builder.SendRequest()
 	},
 }

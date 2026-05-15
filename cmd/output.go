@@ -156,12 +156,17 @@ func RenderRequest(req *RequestBuilder) string {
 
 	methodColor := GetMethodColor(req.Method)
 	methodStr := methodColor.Sprint(req.Method)
-	lines = append(lines, "|  REQUEST"+Pad("", width-16)+"["+methodStr+"]")
+	leftPad := width - 12 - len(req.Method)
+	lines = append(lines, "|  REQUEST"+Pad("", leftPad)+"["+methodStr+"]")
 
 	lines = append(lines, "+"+strings.Repeat("-", width-2)+"+")
 
 	urlColor := ColorURL
-	lines = append(lines, "|  URL       : "+urlColor.Sprint(req.URL))
+	lines = append(lines, "|  URL       : "+urlColor.Sprint(Truncate(req.URL, width-14)))
+
+	if req.ShowResolved && req.origURL != "" && req.origURL != req.URL {
+		lines = append(lines, "|  Resolved  : "+ColorURLUnresolved.Sprint(Truncate(req.origURL, width-14)))
+	}
 
 	if len(req.Headers) > 0 {
 		first := true
@@ -170,10 +175,10 @@ func RenderRequest(req *RequestBuilder) string {
 				value = "***"
 			}
 			if first {
-				lines = append(lines, "|  Headers  : "+ColorHeaderKey.Sprint(key+": ")+ColorHeaderValue.Sprint(value))
+				lines = append(lines, "|  Headers  : "+ColorHeaderKey.Sprint(key+": ")+ColorHeaderValue.Sprint(Truncate(value, width-26-len(key))))
 				first = false
 			} else {
-				lines = append(lines, Pad("", width-16)+ColorHeaderKey.Sprint(key+": ")+ColorHeaderValue.Sprint(value))
+				lines = append(lines, "|  "+Pad("", 12)+ColorHeaderKey.Sprint(key+": ")+ColorHeaderValue.Sprint(Truncate(value, width-26-len(key))))
 			}
 		}
 	}
@@ -182,10 +187,10 @@ func RenderRequest(req *RequestBuilder) string {
 		first := true
 		for key, value := range req.QueryParams {
 			if first {
-				lines = append(lines, "|  Params   : "+ColorParamKey.Sprint(key+"=")+ColorParamValue.Sprint(value))
+				lines = append(lines, "|  Params   : "+ColorParamKey.Sprint(Truncate(key+"=", width-26))+ColorParamValue.Sprint(Truncate(value, width-26-len(key)-1)))
 				first = false
 			} else {
-				lines = append(lines, Pad("", width-16)+ColorParamKey.Sprint(key+"=")+ColorParamValue.Sprint(value))
+				lines = append(lines, "|  "+Pad("", 12)+ColorParamKey.Sprint(Truncate(key+"=", width-26))+ColorParamValue.Sprint(Truncate(value, width-26-len(key)-1)))
 			}
 		}
 	}
@@ -195,6 +200,8 @@ func RenderRequest(req *RequestBuilder) string {
 	if req.Body != "" {
 		lines = append(lines, "|  BODY (Payload)")
 		lines = append(lines, "|  "+formatBodyBox(req.Body, width-4))
+	} else {
+		lines = append(lines, "|  BODY (empty)")
 	}
 
 	lines = append(lines, "+"+strings.Repeat("-", width-2)+"+")
@@ -247,7 +254,8 @@ func RenderResponse(statusCode int, statusText string, duration time.Duration, h
 	statusStr := statusColor.Sprint(fmt.Sprintf("%d %s", statusCode, statusText))
 
 	lines = append(lines, "+"+strings.Repeat("-", width-2)+"+")
-	lines = append(lines, "|  Time: "+timeStr+Pad("", width-24)+"["+statusStr+"]")
+	statusLen := len(fmt.Sprintf("%d %s", statusCode, statusText))
+	lines = append(lines, "|  Time: "+timeStr+Pad("", width-20-statusLen)+"["+statusStr+"]")
 	lines = append(lines, "+"+strings.Repeat("-", width-2)+"+")
 
 	lines = append(lines, "|  RESPONSE")
@@ -260,10 +268,10 @@ func RenderResponse(statusCode int, statusText string, duration time.Duration, h
 				valStr += v
 			}
 			if first {
-				lines = append(lines, "|  Headers  : "+ColorHeaderKey.Sprint(key+": ")+ColorHeaderValue.Sprint(valStr))
+				lines = append(lines, "|  Headers  : "+ColorHeaderKey.Sprint(key+": ")+ColorHeaderValue.Sprint(Truncate(valStr, width-26-len(key))))
 				first = false
 			} else {
-				lines = append(lines, Pad("", width-16)+ColorHeaderKey.Sprint(key+": ")+ColorHeaderValue.Sprint(valStr))
+				lines = append(lines, "|  "+Pad("", 12)+ColorHeaderKey.Sprint(key+": ")+ColorHeaderValue.Sprint(Truncate(valStr, width-26-len(key))))
 			}
 		}
 	}

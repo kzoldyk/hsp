@@ -1,0 +1,22 @@
+name: Tests
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+      - name: Build
+        run: go build -o hsp .
+      - name: Unit tests
+        run: go test ./cmd/ -v
+      - name: Integration tests - sample-test
+        run: |
+          echo "Running sample-test.json against jsonplaceholder..."
+          go run . test run sample-test.json 2>&1 || echo "Exit code: $?"
+      - name: Integration tests - failure-test
+        run: |
+          echo "Running failure-test.json against jsonplaceholder..."
+          go run . test run failure-test.json 2>&1 || echo "Exit code: $?"

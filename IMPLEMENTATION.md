@@ -68,6 +68,20 @@ Body:
 - HEAD
 - OPTIONS
 
+### 9. **Variables & Environments** ✅
+- **Environment variables** with `{{VAR}}` substitution syntax
+- **Custom variable definitions** and management
+- **Variable priority system** (session > env > defaults)
+- **Profile-based configuration** for different environments
+- **Session management** for persistent state
+
+### 10. **Test Suites** ✅
+- **JSON-based test definition** files
+- **Test runner** with pass/fail reporting
+- **Response validation** including status codes and body content
+- **Multi-test execution** in sequence
+- **Detailed test output** with color-coded results
+
 ## 🔧 Technical Implementation
 
 ### Architecture
@@ -143,7 +157,7 @@ import (
 | **JSON Validation** | ✅ | ❌ | ✅ | ✅ |
 | **Pretty JSON** | ✅ | ⚠️ | ✅ | ✅ |
 | **Terminal Only** | ✅ | ✅ | ❌ | ✅ |
-| **Lightweight** | ✅ (15MB) | ✅ | ❌ (300MB) | ✅ |
+| **Lightweight** | ✅ (16MB) | ✅ | ❌ (300MB) | ✅ |
 | **Learning Curve** | Very Easy | Hard | Moderate | Easy |
 
 ## 🎨 User Experience Flow
@@ -205,7 +219,7 @@ START
 
 ## 🚀 Performance Metrics
 
-- **Binary Size**: ~15MB (single static binary)
+- **Binary Size**: ~16MB (single static binary)
 - **Startup Time**: <50ms
 - **Memory Usage**: <10MB typical
 - **Request Time**: Network dependent (displayed)
@@ -223,15 +237,17 @@ START
 ## 📈 Future Enhancement Ideas
 
 1. **Request Collections**: Group and organize requests
-2. **Environment Variables**: `{{API_KEY}}` substitution
+2. **Environment Variables**: `{{API_KEY}}` substitution ✅
 3. **Authentication Profiles**: Save auth tokens
 4. **Request Templates**: Pre-built common API patterns
 5. **Scripting**: Run request sequences
-6. **Response Assertions**: Validate response data
+6. **Response Assertions**: Validate response data ✅
 7. **Export Options**: Save as curl, Postman, etc.
 8. **Tab Completion**: Smart autocomplete
 9. **Custom Variables**: User-defined values
 10. **GraphQL Support**: Special handling for GraphQL
+11. **Export Options**: Save as curl, Postman, etc.
+12. **Tab Completion**: Smart autocomplete
 
 ## ✅ Testing Results
 
@@ -278,12 +294,31 @@ hsp/
 │   ├── root.go         # Root command
 │   ├── get.go          # Quick GET command
 │   ├── post.go         # Quick POST command
-│   └── request.go      # ⭐ Interactive request builder (NEW)
+│   ├── put.go          # Quick PUT command
+│   ├── patch.go        # Quick PATCH command
+│   ├── delete.go       # Quick DELETE command
+│   ├── request.go      # ⭐ Interactive request builder
+│   ├── config.go       # Configuration management
+│   ├── config_test.go  # Config tests
+│   ├── output.go       # Output formatting
+│   ├── output_test.go  # Output tests
+│   ├── env.go          # Environment variable handling
+│   ├── var.go          # Variable definitions
+│   ├── variables.go    # Variable substitution engine
+│   ├── priority.go     # Variable priority system
+│   ├── profiles.go     # Profile-based configuration
+│   ├── session.go      # Session management
+│   └── test.go         # Test suite runner
 ├── README.md           # Full documentation
 ├── QUICKREF.md         # Quick reference
+├── CHANGELOG.md        # Release history
+├── RELEASE_NOTES.md    # Release notes
+├── VISUAL_GUIDE.md     # Visual guide
 ├── demo.sh             # GET demo
 ├── demo_post.sh        # POST demo
 ├── demo_advanced.sh    # Advanced demo
+├── sample-test.json    # Sample test definition
+├── failure-test.json   # Failure test definition
 └── hsp                 # Built executable
 ```
 
@@ -303,6 +338,6 @@ Users no longer need to remember curl syntax or juggle multiple flags. They simp
 
 ---
 
-**Version**: 1.0.0  
-**Release Date**: November 22, 2025  
+**Version**: 1.1.0  
+**Release Date**: May 15, 2026  
 **Status**: ✅ Production Ready
